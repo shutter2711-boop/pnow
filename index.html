@@ -3,17 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ระบบคำนวณราคารายวัน</title>
+    <title>ระบบคำนวณราคารายวัน (เวอร์ชันอัปเดตคลังสินค้า)</title>
     <style>
         :root {
-            --bg-color: #f7f9fa;
+            --bg-color: #f4f7f6;
             --card-bg: #ffffff;
-            --primary-color: #8da9c4;
-            --primary-hover: #0b2545;
+            --primary-color: #a3b18a;
+            --primary-hover: #588157;
+            --secondary-color: #3a5a40;
             --text-color: #333333;
             --text-light: #666666;
             --border-color: #e2e8f0;
-            --success-color: #a3b18a;
         }
 
         body {
@@ -28,11 +28,11 @@
 
         .container {
             width: 100%;
-            max-width: 900px;
+            max-width: 1000px;
         }
 
         h1, h2, h3 {
-            color: #4a5568;
+            color: #3a5a40;
             margin-top: 0;
         }
 
@@ -44,21 +44,24 @@
         .card {
             background: var(--card-bg);
             border-radius: 12px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.02), 0 1px 3px rgba(0,0,0,0.02);
+            box-shadow: 0 4px 6px rgba(0,0,0,0.02);
             padding: 24px;
             margin-bottom: 24px;
             border: 1px solid var(--border-color);
         }
 
-        .grid {
+        .grid-3 {
             display: grid;
             grid-template-columns: 1fr;
             gap: 20px;
         }
 
         @media (min-width: 768px) {
-            .grid {
-                grid-template-columns: 1fr 1fr;
+            .grid-3 {
+                grid-template-columns: 1.2fr 1.8fr;
+            }
+            .full-width {
+                grid-column: span 2;
             }
         }
 
@@ -87,9 +90,9 @@
 
         input:focus, select:focus {
             outline: none;
-            border-color: var(--primary-color);
+            border-color: var(--primary-hover);
             background-color: #fff;
-            box-shadow: 0 0 0 3px rgba(141, 169, 196, 0.2);
+            box-shadow: 0 0 0 3px rgba(88, 129, 87, 0.2);
         }
 
         .btn {
@@ -106,7 +109,7 @@
         }
 
         .btn:hover {
-            background-color: #7a97b3;
+            background-color: var(--primary-hover);
         }
 
         .btn-secondary {
@@ -116,6 +119,17 @@
 
         .btn-secondary:hover {
             background-color: #cbd5e1;
+        }
+
+        .btn-danger {
+            background-color: #fee2e2;
+            color: #ef4444;
+            padding: 6px 12px;
+            font-size: 0.85rem;
+        }
+        .btn-danger:hover {
+            background-color: #fca5a5;
+            color: #b91c1c;
         }
 
         table {
@@ -162,29 +176,19 @@
             font-weight: normal;
         }
 
-        .action-btns {
-            display: flex;
-            gap: 10px;
-            margin-top: 10px;
-        }
-
-        .delete-btn {
-            color: #ef4444;
-            background: none;
-            border: none;
-            cursor: pointer;
-            font-size: 0.9rem;
-        }
-
-        .delete-btn:hover {
-            text-decoration: underline;
-        }
-
         .preset-grid {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
             gap: 10px;
             margin-top: 10px;
+        }
+
+        .product-manage-box {
+            background: #f8fafc;
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px dashed #cbd5e1;
+            margin-top: 15px;
         }
     </style>
 </head>
@@ -192,33 +196,69 @@
 
 <div class="container">
     <header>
-        <h1>📋 ระบบบันทึกและคำนวณราคารายวัน</h1>
-        <p style="color: var(--text-light);">บันทึกรายการสั่งซื้อรายวัน และคำนวณยอดรวมแบ่งช่วงเวลา</p>
+        <h1>🌿 ระบบบันทึกและคำนวณราคารายวัน</h1>
+        <p style="color: var(--text-light);">เวอร์ชันคลังสินค้า 21 รายการ (อัปเดตระบบเรียบร้อยครับ)</p>
     </header>
 
-    <div class="grid">
+    <div class="grid-3">
         <div>
             <div class="card">
-                <h2>➕ เพิ่มรายการสั่งซื้อ</h2>
+                <h2>➕ บันทึกการสั่งซื้อ</h2>
                 <div class="form-group">
                     <label for="order-date">วันที่สั่งซื้อ</label>
                     <input type="date" id="order-date">
                 </div>
+                
                 <div class="form-group">
-                    <label for="item-name">ชื่อรายการ / สิ่งที่สั่ง</label>
-                    <input type="text" id="item-name" placeholder="เช่น ค่าวัตถุดิบ, แพ็คเกจจิ้ง">
+                    <label for="product-select">เลือกสินค้าที่ต้องการสั่ง</label>
+                    <select id="product-select" onchange="updatePriceHint()">
+                        </select>
+                    <small id="price-hint" style="color: var(--text-light); display:block; margin-top:4px; font-size:0.85rem;"></small>
                 </div>
+
                 <div class="form-group">
-                    <label for="item-price">ราคา (บาท)</label>
-                    <input type="number" id="item-price" min="0" step="any" placeholder="0.00">
+                    <label for="item-quantity">จำนวนที่สั่ง</label>
+                    <input type="number" id="item-quantity" min="1" value="1" placeholder="ใส่จำนวน">
                 </div>
-                <button class="btn" onclick="addItem()">บันทึกรายการ</button>
+
+                <button class="btn" onclick="addOrder()">บันทึกลงรายการวันนี้</button>
+            </div>
+
+            <div class="card">
+                <h3>📦 ตั้งค่าและเพิ่มสินค้าในคลัง</h3>
+                <p style="color: var(--text-light); font-size:0.85rem;">สามารถเพิ่มสินค้าใหม่หรือแก้ไขราคาสินค้าเพิ่มเติมได้ตรงนี้ครับ</p>
+                
+                <div class="product-manage-box">
+                    <div class="form-group">
+                        <label for="new-product-name">ชื่อสินค้าใหม่</label>
+                        <input type="text" id="new-product-name" placeholder="เช่น แก้วกาแฟ, เมล็ดกาแฟ">
+                    </div>
+                    <div class="form-group">
+                        <label for="new-product-price">ราคาตั้งต้น (บาท)</label>
+                        <input type="number" id="new-product-price" min="0" placeholder="0.00">
+                    </div>
+                    <button class="btn btn-secondary" style="background-color: #cbd5e1;" onclick="addNewProduct()">➕ เพิ่มเข้าคลัง</button>
+                </div>
+
+                <details style="margin-top: 15px; font-size: 0.9rem;">
+                    <summary style="cursor:pointer; color: var(--secondary-color); font-weight: bold;" id="summary-title">ดู/ลบ รายการสินค้าทั้งหมด</summary>
+                    <table style="font-size: 0.85rem;">
+                        <thead>
+                            <tr>
+                                <th>ชื่อสินค้า</th>
+                                <th>ราคา</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody id="master-product-list"></tbody>
+                    </table>
+                </details>
             </div>
         </div>
 
         <div>
-            <div class="card">
-                <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div class="card" style="height: calc(100% - 48px);">
+                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
                     <h2>🔍 รายการประจำวัน</h2>
                     <input type="date" id="view-date" style="width: auto;" onchange="updateDailyView()">
                 </div>
@@ -226,9 +266,11 @@
                 <table id="daily-table">
                     <thead>
                         <tr>
-                            <th>รายการ</th>
-                            <th class="text-right" style="width: 100px;">ราคา (บาท)</th>
-                            <th style="width: 50px;"></th>
+                            <th>สินค้า</th>
+                            <th class="text-right">ราคา/หน่วย</th>
+                            <th class="text-right" style="width: 70px;">จำนวน</th>
+                            <th class="text-right" style="width: 100px;">รวม (บาท)</th>
+                            <th style="width: 40px;"></th>
                         </tr>
                     </thead>
                     <tbody id="daily-list">
@@ -237,130 +279,239 @@
 
                 <div class="total-box">
                     <span>ยอดรวมวันนี้:</span>
-                    <span id="daily-total" style="color: #475569;">0.00 บาท</span>
+                    <span id="daily-total" style="color: var(--secondary-color);">0.00 บาท</span>
                 </div>
             </div>
         </div>
-    </div>
 
-    <div class="card">
-        <h2>✨ ฟังก์ชันพิเศษ: คำนวณรวมตามช่วงเวลา</h2>
-        <p style="color: var(--text-light); font-size: 0.9rem; margin-bottom: 20px;">
-            เลือกช่วงวันที่ที่ต้องการคำนวณรวม หรือกดปุ่มทางลัดแบ่ง 3 ช่วงของเดือน (10 วัน, 10 วัน, 11 วัน) ได้เลยครับ
-        </p>
+        <div class="card full-width">
+            <h2>✨ ฟังก์ชันพิเศษ: คำนวณรวมตามช่วงเวลา</h2>
+            <p style="color: var(--text-light); font-size: 0.9rem; margin-bottom: 20px;">
+                เลือกช่วงวันที่ที่ต้องการคำนวณรวม หรือกดปุ่มทางลัดแบ่ง 3 ช่วงของเดือน (1-10, 11-20, 21-สิ้นเดือน) ได้เลยครับบอส
+            </p>
 
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
-            <div class="form-group">
-                <label for="range-start">จากวันที่</label>
-                <input type="date" id="range-start" onchange="calculateRangeTotal()">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+                <div class="form-group">
+                    <label for="range-start">จากวันที่</label>
+                    <input type="date" id="range-start" onchange="calculateRangeTotal()">
+                </div>
+                <div class="form-group">
+                    <label for="range-end">ถึงวันที่</label>
+                    <input type="date" id="range-end" onchange="calculateRangeTotal()">
+                </div>
             </div>
-            <div class="form-group">
-                <label for="range-end">ถึงวันที่</label>
-                <input type="date" id="range-end" onchange="calculateRangeTotal()">
-            </div>
-        </div>
 
-        <label>ทางลัดแบ่ง 3 ช่วง (ของเดือนปัจจุบัน):</label>
-        <div class="preset-grid">
-            <button class="btn btn-secondary" onclick="setPresetRange(1, 10)">ช่วงที่ 1 (วันที่ 1-10)</button>
-            <button class="btn btn-secondary" onclick="setPresetRange(11, 20)">ช่วงที่ 2 (วันที่ 11-20)</button>
-            <button class="btn btn-secondary" onclick="setPresetRange(21, 31)">ช่วงที่ 3 (วันที่ 21-สิ้นเดือน)</button>
-        </div>
-
-        <div class="total-box" style="background-color: #f0fdf4; border: 1px solid #bbf7d0; margin-top: 25px;">
-            <div>
-                <span>ยอดรวมช่วงเวลาที่เลือก:</span>
-                <span id="range-label" class="badge" style="margin-left: 10px;">กรุณาเลือกช่วงเวลา</span>
+            <label>ทางลัดแบ่ง 3 ช่วง (ของเดือนปัจจุบัน):</label>
+            <div class="preset-grid">
+                <button class="btn btn-secondary" onclick="setPresetRange(1, 10)">ช่วงที่ 1 (วันที่ 1-10)</button>
+                <button class="btn btn-secondary" onclick="setPresetRange(11, 20)">ช่วงที่ 2 (วันที่ 11-20)</button>
+                <button class="btn btn-secondary" onclick="setPresetRange(21, 31)">ช่วงที่ 3 (วันที่ 21-สิ้นเดือน)</button>
             </div>
-            <span id="range-total" style="color: #166534; font-size: 1.4rem;">0.00 บาท</span>
+
+            <div class="total-box" style="background-color: #f0fdf4; border: 1px solid #bbf7d0; margin-top: 25px;">
+                <div>
+                    <span>ยอดรวมช่วงเวลาที่เลือก:</span>
+                    <span id="range-label" class="badge" style="margin-left: 10px;">กรุณาเลือกช่วงเวลา</span>
+                </div>
+                <span id="range-total" style="color: #166534; font-size: 1.4rem;">0.00 บาท</span>
+            </div>
         </div>
     </div>
 </div>
 
 <script>
-    // โครงสร้างข้อมูลเก็บใน LocalStorage เพื่อให้ปิดเว็บแล้วข้อมูลไม่หาย
-    let orderData = JSON.parse(localStorage.getItem('orderData')) || [];
+    // รายการสินค้าจริง 21 รายการของบอส
+    const defaultProducts = [
+        { id: 1, name: 'ปูใหญ่', price: 750 },
+        { id: 2, name: 'ปูเล็ก', price: 500 },
+        { id: 3, name: 'ปลากระดี่', price: 720 },
+        { id: 4, name: 'ปลารวม', price: 495 },
+        { id: 5, name: 'ผักกาดหัว', price: 160 },
+        { id: 6, name: 'ผักกาดต้มจืด', price: 170 },
+        { id: 7, name: 'ผักกาดฝอย', price: 170 },
+        { id: 8, name: 'หน่อไม้หั่นเหลือง', price: 370 },
+        { id: 9, name: 'หน่อไม้ดองแผ่น', price: 210 },
+        { id: 10, name: 'หน่อไม้ดองสับ', price: 220 },
+        { id: 11, name: 'ฝอยหวาน', price: 580 },
+        { id: 12, name: 'สับหวาน', price: 580 },
+        { id: 13, name: 'เต้าเจี้ยว', price: 320 },
+        { id: 14, name: 'ขิงดอง', price: 570 },
+        { id: 15, name: 'กะปิดี', price: 1130 },
+        { id: 16, name: 'ปลาร้าสับ', price: 690 },
+        { id: 17, name: 'ต้มรอง', price: 250 },
+        { id: 18, name: 'ปลาร้าโหน่ง', price: 330 },
+        { id: 19, name: 'หอยดอง(ถุง)', price: 230 },
+        { id: 20, name: 'หอยดอง(ขวด)', price: 320 },
+        { id: 21, name: 'ปลาจ่อม', price: 360 }
+    ];
 
-    // สั่งให้รันตอนเปิดหน้าเว็บครั้งแรก
+    // เวอร์ชันข้อมูล (ถ้าไม่ตรงกับเลขนี้ ระบบจะรีเซ็ตคลังใหม่ เพื่อป้องกันบั๊กจำค่าเก่าค้าง)
+    const CURRENT_VERSION = "2026_V3";
+    
+    let products = defaultProducts;
+    let orderData = [];
+
+    // ระบบตรวจสอบและโหลดข้อมูล
+    try {
+        const savedVersion = localStorage.getItem('bossSystemVersion');
+        if (savedVersion !== CURRENT_VERSION) {
+            // บังคับรีเซ็ตสินค้าให้เป็น 21 รายการล่าสุด
+            localStorage.setItem('bossProducts', JSON.stringify(defaultProducts));
+            localStorage.setItem('bossSystemVersion', CURRENT_VERSION);
+            products = defaultProducts;
+        } else {
+            products = JSON.parse(localStorage.getItem('bossProducts')) || defaultProducts;
+        }
+        orderData = JSON.parse(localStorage.getItem('bossOrders')) || [];
+    } catch(e) {
+        products = defaultProducts;
+    }
+
     window.onload = function() {
         const today = new Date().toISOString().split('T')[0];
         document.getElementById('order-date').value = today;
         document.getElementById('view-date').value = today;
         
+        renderProductDropdown();
+        renderMasterProductList();
         updateDailyView();
         calculateRangeTotal();
     };
 
-    // ฟังก์ชันเพิ่มรายการ
-    function addItem() {
-        const date = document.getElementById('order-date').value;
-        const name = document.getElementById('item-name').value.trim();
-        const price = parseFloat(document.getElementById('item-price').value);
+    // --- ส่วนของระบบจัดการคลังสินค้าด้านหลัง ---
+    function addNewProduct() {
+        const name = document.getElementById('new-product-name').value.trim();
+        const price = parseFloat(document.getElementById('new-product-price').value);
 
-        if (!date || !name || isNaN(price) || price < 0) {
-            alert('กรุณากรอกข้อมูลให้ครบถ้วน และราคาต้องเป็นตัวเลขที่ถูกต้องครับบอส');
+        if (!name || isNaN(price) || price < 0) {
+            alert('กรุณากรอกชื่อสินค้าและราคาให้ถูกต้องครับบอส');
             return;
         }
 
-        const newItem = {
+        const newProd = { id: Date.now(), name: name, price: price };
+        products.push(newProd);
+        localStorage.setItem('bossProducts', JSON.stringify(products));
+
+        document.getElementById('new-product-name').value = '';
+        document.getElementById('new-product-price').value = '';
+
+        renderProductDropdown();
+        renderMasterProductList();
+    }
+
+    function deleteProduct(id) {
+        if(confirm('หากลบสินค้าชิ้นนี้ มันจะหายไปจากตัวเลือกด้านบนนะครับ ยืนยันไหมครับบอส?')) {
+            products = products.filter(p => p.id !== id);
+            localStorage.setItem('bossProducts', JSON.stringify(products));
+            renderProductDropdown();
+            renderMasterProductList();
+        }
+    }
+
+    function renderProductDropdown() {
+        const select = document.getElementById('product-select');
+        select.innerHTML = products.length === 0 
+            ? '<option value="">-- กรุณาเพิ่มสินค้าในคลังก่อนครับ --</option>' 
+            : products.map(p => `<option value="${p.id}">${p.name}</option>`).join('');
+        updatePriceHint();
+    }
+
+    function renderMasterProductList() {
+        const tbody = document.getElementById('master-product-list');
+        tbody.innerHTML = products.map(p => `
+            <tr>
+                <td>${p.name}</td>
+                <td>${p.price.toLocaleString()} บาท</td>
+                <td class="text-right"><button class="btn-danger" style="border:none; border-radius:4px; cursor:pointer;" onclick="deleteProduct(${p.id})">ลบ</button></td>
+            </tr>
+        `).join('');
+        
+        document.getElementById('summary-title').innerText = `ดู/ลบ รายการสินค้าทั้งหมด (${products.length} รายการ)`;
+    }
+
+    function updatePriceHint() {
+        const select = document.getElementById('product-select');
+        const hint = document.getElementById('price-hint');
+        const selectedId = parseInt(select.value);
+        const prod = products.find(p => p.id === selectedId);
+        
+        if (prod) {
+            hint.innerText = `ราคาตั้งต้น: ${prod.price.toLocaleString()} บาท / หน่วย`;
+        } else {
+            hint.innerText = '';
+        }
+    }
+
+    // --- ส่วนของระบบลงรายการประจำวัน ---
+    function addOrder() {
+        const date = document.getElementById('order-date').value;
+        const productId = parseInt(document.getElementById('product-select').value);
+        const qty = parseInt(document.getElementById('item-quantity').value);
+
+        if (!date || isNaN(productId) || isNaN(qty) || qty <= 0) {
+            alert('ข้อมูลไม่ครบ หรือยังไม่ได้เลือกสินค้าครับบอส');
+            return;
+        }
+
+        const product = products.find(p => p.id === productId);
+        if (!product) return;
+
+        const newOrder = {
             id: Date.now(),
             date: date,
-            name: name,
-            price: price
+            productName: product.name,
+            pricePerUnit: product.price,
+            quantity: qty,
+            totalPrice: product.price * qty
         };
 
-        orderData.push(newItem);
-        saveData();
-        
-        // เคลียร์ฟอร์ม (ยกเว้นวันที่)
-        document.getElementById('item-name').value = '';
-        document.getElementById('item-price').value = '';
-        
-        // อัปเดตหน้าจอหลักให้อิงตามวันที่สั่งซื้อล่าสุดทันที
+        orderData.push(newOrder);
+        localStorage.setItem('bossOrders', JSON.stringify(orderData));
+
+        document.getElementById('item-quantity').value = 1;
         document.getElementById('view-date').value = date;
         updateDailyView();
         calculateRangeTotal();
     }
 
-    // ฟังก์ชันลบรายการ
-    function deleteItem(id) {
-        if(confirm('ยืนยันที่จะลบรายการนี้ใช่ไหมครับบอส?')) {
+    function deleteOrder(id) {
+        if(confirm('ลบรายการสั่งซื้อนี้ใช่ไหมครับบอส?')) {
             orderData = orderData.filter(item => item.id !== id);
-            saveData();
+            localStorage.setItem('bossOrders', JSON.stringify(orderData));
             updateDailyView();
             calculateRangeTotal();
         }
     }
 
-    // อัปเดตตารางแสดงผลรายวัน
     function updateDailyView() {
         const viewDate = document.getElementById('view-date').value;
         const listContainer = document.getElementById('daily-list');
         listContainer.innerHTML = '';
 
-        // กรองข้อมูลเฉพาะวันที่เลือก
         const filteredItems = orderData.filter(item => item.date === viewDate);
         let dailyTotal = 0;
 
         filteredItems.forEach(item => {
-            dailyTotal += item.price;
+            dailyTotal += item.totalPrice;
             const tr = document.createElement('tr');
             tr.innerHTML = `
-                <td>${item.name}</td>
-                <td class="text-right">${item.price.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
-                <td class="text-right"><button class="delete-btn" onclick="deleteItem(${item.id})">ลบ</button></td>
+                <td>${item.productName}</td>
+                <td class="text-right">${item.pricePerUnit.toLocaleString()}</td>
+                <td class="text-right">${item.quantity}</td>
+                <td class="text-right">${item.totalPrice.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
+                <td class="text-right"><button class="btn-danger" style="border:none; border-radius:4px; cursor:pointer;" onclick="deleteOrder(${item.id})">ลบ</button></td>
             `;
             listContainer.appendChild(tr);
         });
 
         if (filteredItems.length === 0) {
-            listContainer.innerHTML = `<tr><td colspan="3" style="text-align:center; color:var(--text-light);">ไม่มีรายการสั่งซื้อในวันนี้</td></tr>`;
+            listContainer.innerHTML = `<tr><td colspan="5" style="text-align:center; color:var(--text-light); padding: 20px;">ไม่มีรายการสั่งซื้อในวันนี้</td></tr>`;
         }
 
-        document.getElementById('daily-total').innerText = dailyTotal.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}) + ' บาท';
+        document.getElementById('daily-total').innerText = dailyTotal.toLocaleString(undefined, {minimumFractionDigits: 2}) + ' บาท';
     }
 
-    // คำนวณรวมตามช่วงวันที่ระบุ
+    // --- ฟังก์ชันคำนวณช่วงเวลา ---
     function calculateRangeTotal() {
         const start = document.getElementById('range-start').value;
         const end = document.getElementById('range-end').value;
@@ -371,28 +522,23 @@
             return;
         }
 
-        // กรองข้อมูลให้อยู่ระหว่างวันที่เริ่ม และ วันที่สิ้นสุด
         const filtered = orderData.filter(item => item.date >= start && item.date <= end);
-        const total = filtered.reduce((sum, item) => sum + item.price, 0);
+        const total = filtered.reduce((sum, item) => sum + item.totalPrice, 0);
 
-        document.getElementById('range-total').innerText = total.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}) + ' บาท';
+        document.getElementById('range-total').innerText = total.toLocaleString(undefined, {minimumFractionDigits: 2}) + ' บาท';
         document.getElementById('range-label').innerText = `${formatThaiDate(start)} ถึง ${formatThaiDate(end)}`;
     }
 
-    // ฟังก์ชันตั้งค่าปุ่มทางลัด 3 ช่วงเวลาใน 1 เดือน
     function setPresetRange(startDay, endDay) {
         const now = new Date();
         const year = now.getFullYear();
-        // เติม 0 ข้างหน้าเดือนถ้ามีหลักเดียว
         const month = String(now.getMonth() + 1).padStart(2, '0'); 
         
         const startDateStr = `${year}-${month}-${String(startDay).padStart(2, '0')}`;
         
-        // กรณีวันสุดท้ายของเดือน (ช่วงที่ 3) ให้คำนวณหาวันสุดท้ายจริงๆ ของเดือนนั้น
         let finalEndDay = endDay;
         if (endDay === 31) {
-            const lastDayOfMonth = new Date(year, now.getMonth() + 1, 0).getDate();
-            finalEndDay = lastDayOfMonth;
+            finalEndDay = new Date(year, now.getMonth() + 1, 0).getDate();
         }
         const endDateStr = `${year}-${month}-${String(finalEndDay).padStart(2, '0')}`;
 
@@ -402,12 +548,6 @@
         calculateRangeTotal();
     }
 
-    // เซฟข้อมูลลงเบราว์เซอร์
-    function saveData() {
-        localStorage.setItem('orderData', JSON.stringify(orderData));
-    }
-
-    // ฟังก์ชันช่วยแปลงฟอร์แมตวันที่ให้คนอ่านง่ายขึ้น
     function formatThaiDate(dateStr) {
         const d = new Date(dateStr);
         return d.toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: '2-digit' });
