@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ระบบคำนวณราคารายวัน</title>
+    <style>
+        :root {
+            --bg-color: #f7f9fa;
+            --card-bg: #ffffff;
+            --primary-color: #8da9c4;
+            --primary-hover: #0b2545;
+            --text-color: #333333;
+            --text-light: #666666;
+            --border-color: #e2e8f0;
+            --success-color: #a3b18a;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif, 'Helvetica Neue', Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 900px;
+        }
+
+        h1, h2, h3 {
+            color: #4a5568;
+            margin-top: 0;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .card {
+            background: var(--card-bg);
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.02), 0 1px 3px rgba(0,0,0,0.02);
+            padding: 24px;
+            margin-bottom: 24px;
+            border: 1px solid var(--border-color);
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 20px;
+        }
+
+        @media (min-width: 768px) {
+            .grid {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 6px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            color: var(--text-light);
+        }
+
+        input, select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            box-sizing: border-box;
+            font-size: 1rem;
+            background-color: #fafafa;
+            transition: all 0.2s;
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            background-color: #fff;
+            box-shadow: 0 0 0 3px rgba(141, 169, 196, 0.2);
+        }
+
+        .btn {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 10px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 600;
+            transition: background 0.2s;
+            width: 100%;
+        }
+
+        .btn:hover {
+            background-color: #7a97b3;
+        }
+
+        .btn-secondary {
+            background-color: #e2e8f0;
+            color: #4a5568;
+        }
+
+        .btn-secondary:hover {
+            background-color: #cbd5e1;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+            font-size: 0.95rem;
+        }
+
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        th {
+            background-color: #f8fafc;
+            color: var(--text-light);
+            font-weight: 600;
+        }
+
+        .text-right {
+            text-align: right;
+        }
+
+        .total-box {
+            background-color: #f1f5f9;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .badge {
+            background-color: #e0f2fe;
+            color: #0369a1;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            font-weight: normal;
+        }
+
+        .action-btns {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .delete-btn {
+            color: #ef4444;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 0.9rem;
+        }
+
+        .delete-btn:hover {
+            text-decoration: underline;
+        }
+
+        .preset-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>📋 ระบบบันทึกและคำนวณราคารายวัน</h1>
+        <p style="color: var(--text-light);">บันทึกรายการสั่งซื้อรายวัน และคำนวณยอดรวมแบ่งช่วงเวลา</p>
+    </header>
+
+    <div class="grid">
+        <div>
+            <div class="card">
+                <h2>➕ เพิ่มรายการสั่งซื้อ</h2>
+                <div class="form-group">
+                    <label for="order-date">วันที่สั่งซื้อ</label>
+                    <input type="date" id="order-date">
+                </div>
+                <div class="form-group">
+                    <label for="item-name">ชื่อรายการ / สิ่งที่สั่ง</label>
+                    <input type="text" id="item-name" placeholder="เช่น ค่าวัตถุดิบ, แพ็คเกจจิ้ง">
+                </div>
+                <div class="form-group">
+                    <label for="item-price">ราคา (บาท)</label>
+                    <input type="number" id="item-price" min="0" step="any" placeholder="0.00">
+                </div>
+                <button class="btn" onclick="addItem()">บันทึกรายการ</button>
+            </div>
+        </div>
+
+        <div>
+            <div class="card">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <h2>🔍 รายการประจำวัน</h2>
+                    <input type="date" id="view-date" style="width: auto;" onchange="updateDailyView()">
+                </div>
+                
+                <table id="daily-table">
+                    <thead>
+                        <tr>
+                            <th>รายการ</th>
+                            <th class="text-right" style="width: 100px;">ราคา (บาท)</th>
+                            <th style="width: 50px;"></th>
+                        </tr>
+                    </thead>
+                    <tbody id="daily-list">
+                        </tbody>
+                </table>
+
+                <div class="total-box">
+                    <span>ยอดรวมวันนี้:</span>
+                    <span id="daily-total" style="color: #475569;">0.00 บาท</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <h2>✨ ฟังก์ชันพิเศษ: คำนวณรวมตามช่วงเวลา</h2>
+        <p style="color: var(--text-light); font-size: 0.9rem; margin-bottom: 20px;">
+            เลือกช่วงวันที่ที่ต้องการคำนวณรวม หรือกดปุ่มทางลัดแบ่ง 3 ช่วงของเดือน (10 วัน, 10 วัน, 11 วัน) ได้เลยครับ
+        </p>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px;">
+            <div class="form-group">
+                <label for="range-start">จากวันที่</label>
+                <input type="date" id="range-start" onchange="calculateRangeTotal()">
+            </div>
+            <div class="form-group">
+                <label for="range-end">ถึงวันที่</label>
+                <input type="date" id="range-end" onchange="calculateRangeTotal()">
+            </div>
+        </div>
+
+        <label>ทางลัดแบ่ง 3 ช่วง (ของเดือนปัจจุบัน):</label>
+        <div class="preset-grid">
+            <button class="btn btn-secondary" onclick="setPresetRange(1, 10)">ช่วงที่ 1 (วันที่ 1-10)</button>
+            <button class="btn btn-secondary" onclick="setPresetRange(11, 20)">ช่วงที่ 2 (วันที่ 11-20)</button>
+            <button class="btn btn-secondary" onclick="setPresetRange(21, 31)">ช่วงที่ 3 (วันที่ 21-สิ้นเดือน)</button>
+        </div>
+
+        <div class="total-box" style="background-color: #f0fdf4; border: 1px solid #bbf7d0; margin-top: 25px;">
+            <div>
+                <span>ยอดรวมช่วงเวลาที่เลือก:</span>
+                <span id="range-label" class="badge" style="margin-left: 10px;">กรุณาเลือกช่วงเวลา</span>
+            </div>
+            <span id="range-total" style="color: #166534; font-size: 1.4rem;">0.00 บาท</span>
+        </div>
+    </div>
+</div>
+
+<script>
+    // โครงสร้างข้อมูลเก็บใน LocalStorage เพื่อให้ปิดเว็บแล้วข้อมูลไม่หาย
+    let orderData = JSON.parse(localStorage.getItem('orderData')) || [];
+
+    // สั่งให้รันตอนเปิดหน้าเว็บครั้งแรก
+    window.onload = function() {
+        const today = new Date().toISOString().split('T')[0];
+        document.getElementById('order-date').value = today;
+        document.getElementById('view-date').value = today;
+        
+        updateDailyView();
+        calculateRangeTotal();
+    };
+
+    // ฟังก์ชันเพิ่มรายการ
+    function addItem() {
+        const date = document.getElementById('order-date').value;
+        const name = document.getElementById('item-name').value.trim();
+        const price = parseFloat(document.getElementById('item-price').value);
+
+        if (!date || !name || isNaN(price) || price < 0) {
+            alert('กรุณากรอกข้อมูลให้ครบถ้วน และราคาต้องเป็นตัวเลขที่ถูกต้องครับบอส');
+            return;
+        }
+
+        const newItem = {
+            id: Date.now(),
+            date: date,
+            name: name,
+            price: price
+        };
+
+        orderData.push(newItem);
+        saveData();
+        
+        // เคลียร์ฟอร์ม (ยกเว้นวันที่)
+        document.getElementById('item-name').value = '';
+        document.getElementById('item-price').value = '';
+        
+        // อัปเดตหน้าจอหลักให้อิงตามวันที่สั่งซื้อล่าสุดทันที
+        document.getElementById('view-date').value = date;
+        updateDailyView();
+        calculateRangeTotal();
+    }
+
+    // ฟังก์ชันลบรายการ
+    function deleteItem(id) {
+        if(confirm('ยืนยันที่จะลบรายการนี้ใช่ไหมครับบอส?')) {
+            orderData = orderData.filter(item => item.id !== id);
+            saveData();
+            updateDailyView();
+            calculateRangeTotal();
+        }
+    }
+
+    // อัปเดตตารางแสดงผลรายวัน
+    function updateDailyView() {
+        const viewDate = document.getElementById('view-date').value;
+        const listContainer = document.getElementById('daily-list');
+        listContainer.innerHTML = '';
+
+        // กรองข้อมูลเฉพาะวันที่เลือก
+        const filteredItems = orderData.filter(item => item.date === viewDate);
+        let dailyTotal = 0;
+
+        filteredItems.forEach(item => {
+            dailyTotal += item.price;
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>${item.name}</td>
+                <td class="text-right">${item.price.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+                <td class="text-right"><button class="delete-btn" onclick="deleteItem(${item.id})">ลบ</button></td>
+            `;
+            listContainer.appendChild(tr);
+        });
+
+        if (filteredItems.length === 0) {
+            listContainer.innerHTML = `<tr><td colspan="3" style="text-align:center; color:var(--text-light);">ไม่มีรายการสั่งซื้อในวันนี้</td></tr>`;
+        }
+
+        document.getElementById('daily-total').innerText = dailyTotal.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}) + ' บาท';
+    }
+
+    // คำนวณรวมตามช่วงวันที่ระบุ
+    function calculateRangeTotal() {
+        const start = document.getElementById('range-start').value;
+        const end = document.getElementById('range-end').value;
+        
+        if (!start || !end) {
+            document.getElementById('range-total').innerText = '0.00 บาท';
+            document.getElementById('range-label').innerText = 'ยังไม่ได้เลือกช่วงวันที่';
+            return;
+        }
+
+        // กรองข้อมูลให้อยู่ระหว่างวันที่เริ่ม และ วันที่สิ้นสุด
+        const filtered = orderData.filter(item => item.date >= start && item.date <= end);
+        const total = filtered.reduce((sum, item) => sum + item.price, 0);
+
+        document.getElementById('range-total').innerText = total.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2}) + ' บาท';
+        document.getElementById('range-label').innerText = `${formatThaiDate(start)} ถึง ${formatThaiDate(end)}`;
+    }
+
+    // ฟังก์ชันตั้งค่าปุ่มทางลัด 3 ช่วงเวลาใน 1 เดือน
+    function setPresetRange(startDay, endDay) {
+        const now = new Date();
+        const year = now.getFullYear();
+        // เติม 0 ข้างหน้าเดือนถ้ามีหลักเดียว
+        const month = String(now.getMonth() + 1).padStart(2, '0'); 
+        
+        const startDateStr = `${year}-${month}-${String(startDay).padStart(2, '0')}`;
+        
+        // กรณีวันสุดท้ายของเดือน (ช่วงที่ 3) ให้คำนวณหาวันสุดท้ายจริงๆ ของเดือนนั้น
+        let finalEndDay = endDay;
+        if (endDay === 31) {
+            const lastDayOfMonth = new Date(year, now.getMonth() + 1, 0).getDate();
+            finalEndDay = lastDayOfMonth;
+        }
+        const endDateStr = `${year}-${month}-${String(finalEndDay).padStart(2, '0')}`;
+
+        document.getElementById('range-start').value = startDateStr;
+        document.getElementById('range-end').value = endDateStr;
+        
+        calculateRangeTotal();
+    }
+
+    // เซฟข้อมูลลงเบราว์เซอร์
+    function saveData() {
+        localStorage.setItem('orderData', JSON.stringify(orderData));
+    }
+
+    // ฟังก์ชันช่วยแปลงฟอร์แมตวันที่ให้คนอ่านง่ายขึ้น
+    function formatThaiDate(dateStr) {
+        const d = new Date(dateStr);
+        return d.toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: '2-digit' });
+    }
+</script>
+
+</body>
+</html>
