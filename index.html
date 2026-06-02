@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ระบบคำนวณราคารายวัน (เวอร์ชันอัปเดตคลังสินค้า)</title>
+    <title>ระบบคำนวณราคารายวัน (เวอร์ชันสลับช่องจัดของ)</title>
     <style>
         :root {
             --bg-color: #f4f7f6;
@@ -197,10 +197,11 @@
 <div class="container">
     <header>
         <h1>🌿 ระบบบันทึกและคำนวณราคารายวัน</h1>
-        <p style="color: var(--text-light);">เวอร์ชันคลังสินค้า 21 รายการ (อัปเดตระบบเรียบร้อยครับ)</p>
+        <p style="color: var(--text-light);">เวอร์ชันปรับปรุง: เรียงลำดับสำหรับแคปหน้าจอจัดของ (ซ่อนราคาง่าย)</p>
     </header>
 
     <div class="grid-3">
+        <!-- ฝั่งซ้าย: บันทึกรายการสั่งซื้อประจำวัน -->
         <div>
             <div class="card">
                 <h2>➕ บันทึกการสั่งซื้อ</h2>
@@ -212,7 +213,8 @@
                 <div class="form-group">
                     <label for="product-select">เลือกสินค้าที่ต้องการสั่ง</label>
                     <select id="product-select" onchange="updatePriceHint()">
-                        </select>
+                        <!-- รายการสินค้าจะโหลดมาใส่ตรงนี้ -->
+                    </select>
                     <small id="price-hint" style="color: var(--text-light); display:block; margin-top:4px; font-size:0.85rem;"></small>
                 </div>
 
@@ -224,6 +226,7 @@
                 <button class="btn" onclick="addOrder()">บันทึกลงรายการวันนี้</button>
             </div>
 
+            <!-- กล่องตั้งค่า: สำหรับเพิ่มสินค้าเข้าไปในระบบก่อน -->
             <div class="card">
                 <h3>📦 ตั้งค่าและเพิ่มสินค้าในคลัง</h3>
                 <p style="color: var(--text-light); font-size:0.85rem;">สามารถเพิ่มสินค้าใหม่หรือแก้ไขราคาสินค้าเพิ่มเติมได้ตรงนี้ครับ</p>
@@ -256,6 +259,7 @@
             </div>
         </div>
 
+        <!-- ฝั่งขวา: รายการของวันที่เลือก และยอดรวมวันนั้น -->
         <div>
             <div class="card" style="height: calc(100% - 48px);">
                 <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
@@ -267,14 +271,15 @@
                     <thead>
                         <tr>
                             <th>สินค้า</th>
-                            <th class="text-right">ราคา/หน่วย</th>
                             <th class="text-right" style="width: 70px;">จำนวน</th>
+                            <th class="text-right" style="width: 90px;">ราคา/หน่วย</th>
                             <th class="text-right" style="width: 100px;">รวม (บาท)</th>
                             <th style="width: 40px;"></th>
                         </tr>
                     </thead>
                     <tbody id="daily-list">
-                        </tbody>
+                        <!-- รายการจะขึ้นตรงนี้ -->
+                    </tbody>
                 </table>
 
                 <div class="total-box">
@@ -284,6 +289,7 @@
             </div>
         </div>
 
+        <!-- ฟังก์ชันพิเศษด้านล่าง: คำนวณยอดรวมตามช่วงเวลา -->
         <div class="card full-width">
             <h2>✨ ฟังก์ชันพิเศษ: คำนวณรวมตามช่วงเวลา</h2>
             <p style="color: var(--text-light); font-size: 0.9rem; margin-bottom: 20px;">
@@ -345,17 +351,15 @@
         { id: 21, name: 'ปลาจ่อม', price: 360 }
     ];
 
-    // เวอร์ชันข้อมูล (ถ้าไม่ตรงกับเลขนี้ ระบบจะรีเซ็ตคลังใหม่ เพื่อป้องกันบั๊กจำค่าเก่าค้าง)
-    const CURRENT_VERSION = "2026_V3";
+    // เวอร์ชันข้อมูล (ป้องกันบั๊กเบราว์เซอร์จำค่าเก่า)
+    const CURRENT_VERSION = "2026_V4_SWAP";
     
     let products = defaultProducts;
     let orderData = [];
 
-    // ระบบตรวจสอบและโหลดข้อมูล
     try {
         const savedVersion = localStorage.getItem('bossSystemVersion');
         if (savedVersion !== CURRENT_VERSION) {
-            // บังคับรีเซ็ตสินค้าให้เป็น 21 รายการล่าสุด
             localStorage.setItem('bossProducts', JSON.stringify(defaultProducts));
             localStorage.setItem('bossSystemVersion', CURRENT_VERSION);
             products = defaultProducts;
@@ -378,7 +382,7 @@
         calculateRangeTotal();
     };
 
-    // --- ส่วนของระบบจัดการคลังสินค้าด้านหลัง ---
+    // --- ระบบจัดการคลังสินค้าด้านหลัง ---
     function addNewProduct() {
         const name = document.getElementById('new-product-name').value.trim();
         const price = parseFloat(document.getElementById('new-product-price').value);
@@ -442,7 +446,7 @@
         }
     }
 
-    // --- ส่วนของระบบลงรายการประจำวัน ---
+    // --- ระบบลงรายการประจำวัน ---
     function addOrder() {
         const date = document.getElementById('order-date').value;
         const productId = parseInt(document.getElementById('product-select').value);
@@ -494,10 +498,11 @@
         filteredItems.forEach(item => {
             dailyTotal += item.totalPrice;
             const tr = document.createElement('tr');
+            // ปรับตรงนี้: สลับเอาจำนวน (item.quantity) ขึ้นก่อนราคาต่อหน่วย
             tr.innerHTML = `
                 <td>${item.productName}</td>
+                <td class="text-right" style="font-weight: bold; color: var(--secondary-color);">${item.quantity}</td>
                 <td class="text-right">${item.pricePerUnit.toLocaleString()}</td>
-                <td class="text-right">${item.quantity}</td>
                 <td class="text-right">${item.totalPrice.toLocaleString(undefined, {minimumFractionDigits: 2})}</td>
                 <td class="text-right"><button class="btn-danger" style="border:none; border-radius:4px; cursor:pointer;" onclick="deleteOrder(${item.id})">ลบ</button></td>
             `;
